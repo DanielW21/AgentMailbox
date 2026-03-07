@@ -15,6 +15,44 @@ The app receives incoming email requests through AgentMail, runs a 3-agent workf
 5. `ResponseAgent` generates a polished response body.
 6. `main.py` sends the response email via Microsoft Graph API (with upload session for large attachments).
 
+## DAG
+```mermaid
+graph TD
+    %% Define Styles
+    classDef mainNode fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef agentNode fill:#bbf,stroke:#333,stroke-width:1px;
+    classDef errorNode fill:#faa,stroke:#333,stroke-width:1px;
+
+    %% Entry
+    Start((Email Received)) -->|Webhook| Main[src/main.py]
+    class Main mainNode;
+
+    %% Intake Logic
+    Main -->|Raw Text| Intake[IntakeAgent]
+    class Intake agentNode;
+    Intake -->|Valid| Navigate[NavigateAgent]
+    Intake -->|Invalid| Err1[Response: Info Missing]
+    class Err1 errorNode;
+
+    %% Navigation Logic
+    Navigate -->|Success| Zip[utils/zip.py]
+    class Navigate agentNode;
+
+    Navigate -->|Fail| Err2[Response: Matter Not Found]
+    class Err2 errorNode;
+
+    %% Finalization
+    Zip -->|Archive Created| Resp[ResponseAgent]
+
+    class Resp agentNode;
+    Resp --> Final[Send via MS Graph]
+    
+    %% Error Routing
+    Err1 --> Final
+    Err2 --> Final
+    Final --> End((Response Email Sent))
+```
+
 ## Project Structure
 
 ```text
