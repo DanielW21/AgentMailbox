@@ -1,0 +1,7 @@
+/attachments
+venv/
+.env
+.browseruse
+.vscode
+downloads/
+__pycache__
