@@ -17,40 +17,41 @@ The app receives incoming email requests through AgentMail, runs a 3-agent workf
 
 ## DAG
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'nodePadding': '15', 'rankSpacing': '40', 'curve': 'linear' }}}%%
 graph TD
     %% Define Styles
     classDef mainNode fill:#f9f,stroke:#333,stroke-width:2px;
     classDef agentNode fill:#bbf,stroke:#333,stroke-width:1px;
     classDef errorNode fill:#faa,stroke:#333,stroke-width:1px;
+    classDef utility fill:#fff4dd,stroke:#d4a017,stroke-width:1px;
 
     %% Entry
-    Start((Email Received)) -->|Webhook| Main[src/main.py]
+    Start((&nbsp;Email Received&nbsp;)) -->|Webhook| Main["&nbsp;src/main.py&nbsp;"]
     class Main mainNode;
 
-    %% Intake Logic
-    Main -->|Raw Text| Intake[IntakeAgent]
-    class Intake agentNode;
-    Intake -->|Valid| Navigate[NavigateAgent]
-    Intake -->|Invalid| Err1[Response: Info Missing]
-    class Err1 errorNode;
+    %% Core Workflow (Straight Down)
+    Main --> Intake["&nbsp;IntakeAgent&nbsp;"]
+    Intake -->|Valid| Nav["&nbsp;NavigateAgent&nbsp;"]
+    Nav -->|Success| Zip["&nbsp;utils/zip.py&nbsp;"]
+    Zip --> Resp["&nbsp;ResponseAgent&nbsp;"]
+    Resp --> Final["&nbsp;Send via MS Graph&nbsp;"]
 
-    %% Navigation Logic
-    Navigate -->|Success| Zip[utils/zip.py]
-    class Navigate agentNode;
+    %% Internal Retry (Compact Loop)
+    Nav -.->|3x Retry| Nav
 
-    Navigate -->|Fail| Err2[Response: Matter Not Found]
-    class Err2 errorNode;
-
-    %% Finalization
-    Zip -->|Archive Created| Resp[ResponseAgent]
-
-    class Resp agentNode;
-    Resp --> Final[Send via MS Graph]
+    %% Error Handling (Side Branches)
+    Intake ---->|Invalid| Err1["&nbsp;Response: Info Missing&nbsp;"]
+    Nav ---->|Fail| Err2["&nbsp;Response: Matter Not Found&nbsp;"]
     
-    %% Error Routing
+    %% Align Errors to Final
     Err1 --> Final
     Err2 --> Final
-    Final --> End((Response Email Sent))
+    Final --> End((&nbsp;Response Email Sent&nbsp;))
+
+    %% Assignments
+    class Intake,Nav,Resp agentNode;
+    class Err1,Err2 errorNode;
+    class Zip utility;
 ```
 
 ## Project Structure
