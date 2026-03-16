@@ -1,4 +1,4 @@
-# SenpilotDemo
+# Agent Mailbox for Document Querying
 
 Multi-agent automation pipeline for UARB matter lookup and document download.
 
